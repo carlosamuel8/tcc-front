@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
+
+import VueSlider from 'vue-slider-component'
+import 'vue-slider-component/theme/default.css'
 import { BCol } from 'bootstrap-vue-next';
 
 const yearSelectOptions = [
@@ -38,12 +41,17 @@ interface ITabelasResult {
   df_consolidado: IConsolidade[],
 }
 
-const selectedYear = ref(null)
+const selectedYear = ref('Todos as turmas')
 const requestIsLoading = ref(false)
+const visualizationType = ref('taxa_aprovacao')
+const visualizationTypeTab2 = ref('taxa_aprovacao')
+const range = ref([2013, 2023])
 
 const imageResponse = ref<string | null>(null)
+const imageResponseTab2 = ref<string | null>(null)
 
 const tabelasResult = ref<ITabelasResult | null>(null);
+const tabelasResultTab2 = ref<ITabelasResult | null>(null);
 
 function _arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = '';
@@ -61,6 +69,7 @@ const onGenerateImageClick = () => {
     axios.get('http://localhost:5000/v2/visualizacao/image', {
       params: {
         selecao: selectedYear.value,
+        type: visualizationType.value,
       },
       responseType: 'arraybuffer'
     })
@@ -87,27 +96,78 @@ const onGenerateImageClick = () => {
       })
   }
 }
+
+const onGenerateImageTab2Click = () => {
+  if (selectedYear.value) {
+    requestIsLoading.value = true;
+    axios.get('http://localhost:5000/v2/visualizacao/image', {
+      params: {
+        selecao: range.value[0],
+        selecao2: range.value[1],
+        type: visualizationTypeTab2.value,
+      },
+      responseType: 'arraybuffer'
+    })
+      .then(response => {
+        requestIsLoading.value = false;
+        imageResponseTab2.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+      })
+      .catch(error => {
+        requestIsLoading.value = false;
+        console.error('[REQUEST ERROR]', error)
+      })
+
+    axios.get('http://localhost:5000/v2/visualizacao/tabelas', {
+      params: {
+        selecao: selectedYear.value,
+      },
+    })
+      .then(response => response.data)
+      .then(response => {
+        tabelasResultTab2.value = response;
+      })
+      .catch(error => {
+        console.error('[REQUEST ERROR]', error)
+      })
+  }
+}
+
+onMounted(() => {
+  onGenerateImageClick()
+})
 </script>
 
 <template>
   <BContainer fluid>
     <BCard no-body>
-      <BTabs card>
+      <BTabs card align="center">
         <BTab title="Tab 1" active>
-          <div class="d-grid gap-2">
+          <div class="d-flex gap-3">
             <BFormSelect v-model="selectedYear" :options="yearSelectOptions" />
             <BButton :loading="requestIsLoading" loading-text="Carregando..." :disabled="requestIsLoading"
               variant="primary" @click="onGenerateImageClick">Gerar Imagem</BButton>
           </div>
+
+          <div>
+            <label>Tipo de visualizaçâo</label>
+            <BFormRadioGroup v-model="visualizationType" name="visualization-type">
+              <BFormRadio value="taxa_aprovacao">Taxa de Aprovação
+              </BFormRadio>
+              <BFormRadio value="gargalo">Gargalos</BFormRadio>
+              <BFormRadio value="supressao">Supressâo</BFormRadio>
+              <BFormRadio value="trancamento">Trancamento
+              </BFormRadio>
+            </BFormRadioGroup>
+          </div>
           <hr />
 
           <BRow class="pt-3">
-            <BCol md="7">
+            <BCol md="6">
               <template v-if="imageResponse">
                 <img :src="imageResponse" class="w-100" />
               </template>
             </BCol>
-            <BCol md="5">
+            <BCol md="6">
               <template v-if="tabelasResult">
                 <BTable striped bordered hover :items="tabelasResult.analise_turma" :fields="[
                   { key: 'Status', sortable: true },
@@ -118,14 +178,13 @@ const onGenerateImageClick = () => {
 
                 <div style="max-height: 500px; overflow: auto;">
 
-                  <span>oioioi</span>
                   <BTable striped bordered hover :items="tabelasResult.df_consolidado" :fields="[
-                    { key: 'Código', sortable: true},
-                    { key: 'Gargalo', sortable: true},
-                    { key: 'Nome', sortable: true},
-                    { key: 'Supressões', sortable: true},
-                    { key: 'Taxa de Aprovação (%)', sortable: true},
-                    { key: 'Trancamentos', sortable: true},
+                    { key: 'Código', sortable: true },
+                    { key: 'Gargalo', sortable: true },
+                    { key: 'Nome', sortable: true },
+                    { key: 'Supressões', sortable: true },
+                    { key: 'Taxa de Aprovação (%)', sortable: true },
+                    { key: 'Trancamentos', sortable: true },
                   ]" />
                 </div>
 
@@ -134,7 +193,51 @@ const onGenerateImageClick = () => {
           </BRow>
         </BTab>
         <BTab title="Tab 2">
-          <BCardText>Tab contents 2</BCardText>
+          <BRow class="pt-3">
+            <BCol md="4">
+              <VueSlider :min="2013" :max="2023" :interval="1" :marks="true" v-model="range"></VueSlider>
+            </BCol>
+            <BCol md="6">
+              <div>
+                <label>Tipo de visualizaçâo</label>
+                <BFormRadioGroup v-model="visualizationTypeTab2" name="visualization-type-t2">
+                  <BFormRadio value="taxa_aprovacao">Taxa de Aprovação
+                  </BFormRadio>
+                  <BFormRadio value="gargalo">Gargalos</BFormRadio>
+                  <BFormRadio value="supressao">Supressâo</BFormRadio>
+                  <BFormRadio value="trancamento">Trancamento
+                  </BFormRadio>
+                </BFormRadioGroup>
+              </div>
+            </BCol>
+            <BCol md="2">
+              <BButton :loading="requestIsLoading" loading-text="Carregando..." :disabled="requestIsLoading"
+                variant="primary" @click="onGenerateImageTab2Click">Gerar Imagem</BButton>
+              </BCol>
+          </BRow>
+          <BRow class="pt-3">
+            <BCol md="6">
+              <template v-if="imageResponseTab2">
+                <img :src="imageResponseTab2" class="w-100" />
+              </template>
+            </BCol>
+            <BCol md="6">
+              <template v-if="tabelasResultTab2">
+
+                <div style="max-height: 500px; overflow: auto;">
+                  <BTable striped bordered hover :items="tabelasResultTab2.df_consolidado" :fields="[
+                    { key: 'Código', sortable: true },
+                    { key: 'Gargalo', sortable: true },
+                    { key: 'Nome', sortable: true },
+                    { key: 'Supressões', sortable: true },
+                    { key: 'Taxa de Aprovação (%)', sortable: true },
+                    { key: 'Trancamentos', sortable: true },
+                  ]" />
+                </div>
+
+              </template>
+            </BCol>
+          </BRow>
         </BTab>
       </BTabs>
     </BCard>
