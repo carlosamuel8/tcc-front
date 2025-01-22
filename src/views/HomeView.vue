@@ -35,7 +35,7 @@ function _arrayBufferToBase64(buffer: ArrayBuffer) {
 const onGenerateImageClick = () => {
   if (selectedYear.value) {
     requestIsLoading.value = true;
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/visualizacao/csv', {
+    axios.get('http://localhost:5000/visualizacao/csv', {
       params: {
         year: selectedYear.value,
       },
