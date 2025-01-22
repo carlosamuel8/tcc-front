@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import axios from 'axios';
+import { BCol } from 'bootstrap-vue-next';
 
 const yearSelectOptions = [
   { value: null, text: 'Selecione uma opção' },
@@ -23,12 +24,30 @@ interface IAnaliseTurmaItem {
   Status: string;
 }
 
+interface IGargalos {
+  0: string;
+  1: string;
+  2: number;
+}
+
+interface ISupressoes {
+  0: string;
+  1: string;
+  2: number;
+}
+
+interface ITabelasResult {
+  analise_turma: IAnaliseTurmaItem[],
+  disciplinas_com_maior_gargalo: IGargalos[],
+  disciplinas_com_maior_supressoes: ISupressoes[],
+}
+
 const selectedYear = ref(null)
 const requestIsLoading = ref(false)
 
 const imageResponse = ref<string | null>(null)
 
-const analiseTurmasResult = ref<IAnaliseTurmaItem[] | null>(null);
+const tabelasResult = ref<ITabelasResult | null>(null);
 
 function _arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = '';
@@ -58,14 +77,14 @@ const onGenerateImageClick = () => {
         console.error('[REQUEST ERROR]', error)
       })
 
-    axios.get('http://localhost:5000/v2/visualizacao/analise_turmas', {
+    axios.get('http://localhost:5000/v2/visualizacao/tabelas', {
       params: {
         selecao: selectedYear.value,
       },
     })
       .then(response => response.data)
       .then(response => {
-        analiseTurmasResult.value = response;
+        tabelasResult.value = response;
       })
       .catch(error => {
         console.error('[REQUEST ERROR]', error)
@@ -75,47 +94,60 @@ const onGenerateImageClick = () => {
 </script>
 
 <template>
-  <BContainer class="bv-example-row">
-    <BRow class="pt-3">
-      <BCol md="4">
-        <div class="d-grid gap-2">
-          <BFormSelect
-            v-model="selectedYear"
-            :options="yearSelectOptions"
-          />
-          <BButton
-            :loading="requestIsLoading"
-            loading-text="Carregando..."
-            :disabled="requestIsLoading"
-            variant="primary"
-            @click="onGenerateImageClick"
-          >Gerar Imagem</BButton>
-        </div>
-      </BCol>
-      <BCol md="8">
-        <template v-if="imageResponse">
-          <img
-            :src="imageResponse"
-            class="w-100"
-          />
-        </template>
-      </BCol>
-    </BRow>
-    <BRow>
-      <BCol md="4">
-        <template v-if="analiseTurmasResult">
-          <BTable
-            striped
-            bordered
-            hover
-            :items="analiseTurmasResult"
-            :fields="[
-              {key: 'Status', sortable: true},
-              {key: 'Quantidade', sortable: true},
-            ]"
-          />
-        </template>
-      </BCol>
-    </BRow>
+  <BContainer fluid>
+    <BCard no-body>
+      <BTabs card>
+        <BTab title="Tab 1" active>
+          <div class="d-grid gap-2">
+            <BFormSelect v-model="selectedYear" :options="yearSelectOptions" />
+            <BButton :loading="requestIsLoading" loading-text="Carregando..." :disabled="requestIsLoading"
+              variant="primary" @click="onGenerateImageClick">Gerar Imagem</BButton>
+          </div>
+          <hr />
+
+          <BRow class="pt-3">
+            <BCol md="7">
+              <template v-if="imageResponse">
+                <img :src="imageResponse" class="w-100" />
+              </template>
+            </BCol>
+            <BCol md="5">
+              <template v-if="tabelasResult">
+                <BTable striped bordered hover :items="tabelasResult.analise_turma" :fields="[
+                  { key: 'Status', sortable: true },
+                  { key: 'Quantidade', sortable: true },
+                ]" />
+
+                <hr />
+
+                <div style="max-height: 500px; overflow: auto;">
+
+                  <span>oioioi</span>
+                  <BTable striped bordered hover :items="tabelasResult.disciplinas_com_maior_gargalo" :fields="[
+                    { key: 0, label: 'Código', sortable: false },
+                    { key: 1, label: 'Disciplina', sortable: false },
+                    { key: 2, label: 'Quantidade', sortable: false },
+                  ]" />
+                </div>
+
+                <hr />
+
+                <div style="max-height: 500px; overflow: auto;">
+                  <BTable striped bordered hover :items="tabelasResult.disciplinas_com_maior_supressoes" :fields="[
+                    { key: 0, label: 'Código', sortable: false },
+                    { key: 1, label: 'Disciplina', sortable: false },
+                    { key: 2, label: 'Quantidade', sortable: false },
+                  ]" />
+                </div>
+
+              </template>
+            </BCol>
+          </BRow>
+        </BTab>
+        <BTab title="Tab 2">
+          <BCardText>Tab contents 2</BCardText>
+        </BTab>
+      </BTabs>
+    </BCard>
   </BContainer>
 </template>
