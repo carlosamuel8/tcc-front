@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const yearSelectOptions = [
   { value: null, text: 'Selecione uma opção' },
+  { value: 'Todos as turmas', text: 'Todas as turmas' },
   { value: '2013', text: '2013' },
   { value: '2014', text: '2014' },
   { value: '2015', text: '2015' },
@@ -17,10 +18,17 @@ const yearSelectOptions = [
   { value: '2023', text: '2023' },
 ];
 
+interface IAnaliseTurmaItem {
+  Quantidade: number;
+  Status: string;
+}
+
 const selectedYear = ref(null)
 const requestIsLoading = ref(false)
 
 const imageResponse = ref<string | null>(null)
+
+const analiseTurmasResult = ref<IAnaliseTurmaItem[] | null>(null);
 
 function _arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = '';
@@ -35,9 +43,9 @@ function _arrayBufferToBase64(buffer: ArrayBuffer) {
 const onGenerateImageClick = () => {
   if (selectedYear.value) {
     requestIsLoading.value = true;
-    axios.get('http://localhost:5000/visualizacao/csv', {
+    axios.get('http://localhost:5000/v2/visualizacao/image', {
       params: {
-        year: selectedYear.value,
+        selecao: selectedYear.value,
       },
       responseType: 'arraybuffer'
     })
@@ -47,6 +55,19 @@ const onGenerateImageClick = () => {
       })
       .catch(error => {
         requestIsLoading.value = false;
+        console.error('[REQUEST ERROR]', error)
+      })
+
+    axios.get('http://localhost:5000/v2/visualizacao/analise_turmas', {
+      params: {
+        selecao: selectedYear.value,
+      },
+    })
+      .then(response => response.data)
+      .then(response => {
+        analiseTurmasResult.value = response;
+      })
+      .catch(error => {
         console.error('[REQUEST ERROR]', error)
       })
   }
@@ -76,6 +97,22 @@ const onGenerateImageClick = () => {
           <img
             :src="imageResponse"
             class="w-100"
+          />
+        </template>
+      </BCol>
+    </BRow>
+    <BRow>
+      <BCol md="4">
+        <template v-if="analiseTurmasResult">
+          <BTable
+            striped
+            bordered
+            hover
+            :items="analiseTurmasResult"
+            :fields="[
+              {key: 'Status', sortable: true},
+              {key: 'Quantidade', sortable: true},
+            ]"
           />
         </template>
       </BCol>
