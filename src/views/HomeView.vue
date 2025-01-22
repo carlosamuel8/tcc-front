@@ -24,22 +24,18 @@ interface IAnaliseTurmaItem {
   Status: string;
 }
 
-interface IGargalos {
-  0: string;
-  1: string;
-  2: number;
-}
-
-interface ISupressoes {
-  0: string;
-  1: string;
-  2: number;
+interface IConsolidade {
+  'Código': string;
+  'Gargalo': number;
+  'Nome': string;
+  'Supressões': number;
+  'Taxa de Aprovação (%)': number;
+  'Trancamentos': number;
 }
 
 interface ITabelasResult {
   analise_turma: IAnaliseTurmaItem[],
-  disciplinas_com_maior_gargalo: IGargalos[],
-  disciplinas_com_maior_supressoes: ISupressoes[],
+  df_consolidado: IConsolidade[],
 }
 
 const selectedYear = ref(null)
@@ -123,20 +119,13 @@ const onGenerateImageClick = () => {
                 <div style="max-height: 500px; overflow: auto;">
 
                   <span>oioioi</span>
-                  <BTable striped bordered hover :items="tabelasResult.disciplinas_com_maior_gargalo" :fields="[
-                    { key: 0, label: 'Código', sortable: false },
-                    { key: 1, label: 'Disciplina', sortable: false },
-                    { key: 2, label: 'Quantidade', sortable: false },
-                  ]" />
-                </div>
-
-                <hr />
-
-                <div style="max-height: 500px; overflow: auto;">
-                  <BTable striped bordered hover :items="tabelasResult.disciplinas_com_maior_supressoes" :fields="[
-                    { key: 0, label: 'Código', sortable: false },
-                    { key: 1, label: 'Disciplina', sortable: false },
-                    { key: 2, label: 'Quantidade', sortable: false },
+                  <BTable striped bordered hover :items="tabelasResult.df_consolidado" :fields="[
+                    { key: 'Código', sortable: true},
+                    { key: 'Gargalo', sortable: true},
+                    { key: 'Nome', sortable: true},
+                    { key: 'Supressões', sortable: true},
+                    { key: 'Taxa de Aprovação (%)', sortable: true},
+                    { key: 'Trancamentos', sortable: true},
                   ]" />
                 </div>
 
