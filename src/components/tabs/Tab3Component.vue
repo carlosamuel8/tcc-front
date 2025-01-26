@@ -1,52 +1,38 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import axios from 'axios';
+import VueSlider from 'vue-3-slider-component'
 
 import { _arrayBufferToBase64 } from '@/utils/image';
 
 import { API_URL } from '@/environment'
 
-const selectedYear = ref('Todos as turmas')
-
 const requestPetrinetIsLoading = ref(false)
 const requestFluxogramaIsLoading = ref(false)
 
-const yearSelectOptions = [
-  { value: null, text: 'Selecione uma opção' },
-  { value: '2013', text: '2013' },
-  { value: '2014', text: '2014' },
-  { value: '2015', text: '2015' },
-  { value: '2016', text: '2016' },
-  { value: '2017', text: '2017' },
-  { value: '2018', text: '2018' },
-  { value: '2019', text: '2019' },
-  { value: '2020', text: '2020' },
-  { value: '2021', text: '2021' },
-  { value: '2022', text: '2022' },
-  { value: '2023', text: '2023' },
-];
+const range = ref([2013, 2023]);
 
-const selectedMinYear = ref(2013);
-const selectedMaxYear = ref(2023);
-
-const imageResponseTab3 = ref<string | null>(null)
-const imageResponseTab4 = ref<string | null>(null)
+const imageResponsePetrinet = ref<string | null>(null)
+const imageResponseFluxograma = ref<string | null>(null)
 
 const onGenerateImagesClick = () => {
-  if (selectedYear.value) {
+  if (range.value) {
     requestPetrinetIsLoading.value = true;
     requestFluxogramaIsLoading.value = true;
 
+    imageResponsePetrinet.value = null;
+    imageResponseFluxograma.value = null;
+
     axios.get(`${API_URL}/v2/visualizacao/petrinet`, {
       params: {
-        selecao: selectedMinYear.value,
-        selecao2: selectedMaxYear.value,
+        selecao: range.value[0],
+        selecao2: range.value[1],
       },
       responseType: 'arraybuffer'
     })
       .then(response => {
         requestPetrinetIsLoading.value = false;
-        imageResponseTab3.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+        imageResponsePetrinet.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
         requestPetrinetIsLoading.value = false;
@@ -55,14 +41,14 @@ const onGenerateImagesClick = () => {
 
     axios.get(`${API_URL}/v2/visualizacao/fluxograma`, {
       params: {
-        selecao: selectedMinYear.value,
-        selecao2: selectedMaxYear.value,
+        selecao: range.value[0],
+        selecao2: range.value[1],
       },
       responseType: 'arraybuffer'
     })
       .then(response => {
         requestFluxogramaIsLoading.value = false;
-        imageResponseTab4.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+        imageResponseFluxograma.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
         requestFluxogramaIsLoading.value = false;
@@ -90,28 +76,20 @@ onMounted(() => {
     align-h="center"
   >
     <BCol
-      md="4"
-      cols="4"
+      md="6"
+      cols="12"
     >
-      <label>Ano inicial</label>
-      <BFormSelect
-        v-model="selectedMinYear"
-        :options="yearSelectOptions"
-      />
-    </BCol>
-    <BCol
-      md="4"
-      cols="4"
-    >
-      <label>Ano final</label>
-      <BFormSelect
-        v-model="selectedMaxYear"
-        :options="yearSelectOptions"
+      <VueSlider
+        v-model="range"
+        min="2013"
+        max="2023"
+        marks
+        adsorb
       />
     </BCol>
     <BCol
       md="2"
-      cols="4"
+      cols="12"
     >
       <BButton
         :loading="requestFluxogramaIsLoading || requestPetrinetIsLoading"
@@ -127,9 +105,9 @@ onMounted(() => {
     <BCol md="6">
       <h2 class="text-center">Visualizar Rede de Petri</h2>
 
-      <template v-if="imageResponseTab3">
+      <template v-if="imageResponsePetrinet">
         <img
-          :src="imageResponseTab3"
+          :src="imageResponsePetrinet"
           class="w-100"
           style="border: 2px solid #d3d3d3; border-radius: 5px;"
         />
@@ -144,9 +122,9 @@ onMounted(() => {
 
     <BCol md="6">
       <h2 class="text-center">Visualizar Fluxograma</h2>
-      <template v-if="imageResponseTab4">
+      <template v-if="imageResponseFluxograma">
         <img
-          :src="imageResponseTab4"
+          :src="imageResponseFluxograma"
           class="w-100"
           style="border: 2px solid #d3d3d3; border-radius: 5px;"
         />

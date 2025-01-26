@@ -1,48 +1,31 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import axios from 'axios';
+import VueSlider from 'vue-3-slider-component'
 
 import { _arrayBufferToBase64 } from '@/utils/image';
 
 import { API_URL } from '@/environment'
 import type { ITabelasResult, TVisualization } from '@/types';
 
-const yearSelectOptions = [
-  { value: null, text: 'Selecione uma opção' },
-  { value: '2013', text: '2013' },
-  { value: '2014', text: '2014' },
-  { value: '2015', text: '2015' },
-  { value: '2016', text: '2016' },
-  { value: '2017', text: '2017' },
-  { value: '2018', text: '2018' },
-  { value: '2019', text: '2019' },
-  { value: '2020', text: '2020' },
-  { value: '2021', text: '2021' },
-  { value: '2022', text: '2022' },
-  { value: '2023', text: '2023' },
-];
-
 const requestImageIsLoading = ref(false)
 const requestTableIsLoading = ref(false)
 
-const selectedMinYear = ref(2013);
-const selectedMaxYear = ref(2023);
 const visualizationType = ref<TVisualization>('taxa_aprovacao')
+const range = ref([2013, 2023]);
 
 const imageResponse = ref<string | null>(null)
 const tabelasResult = ref<ITabelasResult | null>(null);
 
-
-
 const onRequestImage = () => {
-  if (selectedMinYear.value && selectedMaxYear.value) {
+  if (range.value[0] && range.value[1]) {
     requestImageIsLoading.value = true;
     imageResponse.value = null;
 
     axios.get(`${API_URL}/v2/visualizacao/image`, {
       params: {
-        selecao: selectedMinYear.value,
-        selecao2: selectedMaxYear.value,
+        selecao: range.value[0],
+        selecao2: range.value[1],
         type: visualizationType.value,
       },
       responseType: 'arraybuffer'
@@ -59,14 +42,14 @@ const onRequestImage = () => {
 }
 
 const onRequestTableData = () => {
-  if (selectedMinYear.value && selectedMaxYear.value) {
+  if (range.value[0] && range.value[1]) {
     requestTableIsLoading.value = true;
     tabelasResult.value = null;
 
     axios.get(`${API_URL}/v2/visualizacao/tabelas`, {
       params: {
-        selecao: selectedMinYear.value,
-        selecao2: selectedMaxYear.value,
+        selecao: range.value[0],
+        selecao2: range.value[1],
       },
     })
       .then(response => response.data)
@@ -97,43 +80,28 @@ onMounted(() => {
 
 </script>
 <template>
-  <BRow
-    class="pt-3"
-    align-h="center"
-  >
-    <BCol md="12">
-      <h4 class="text-center">Selecione um período: </h4>
-    </BCol>
-  </BRow>
+  <h4 class="text-center">Selecione um período: </h4>
   <BRow
     class="pt-3"
     align-h="center"
   >
     <BCol
-      md="4"
+      md="6"
       cols="4"
     >
-      <label>Ano inicial</label>
-      <BFormSelect
-        v-model="selectedMinYear"
-        :options="yearSelectOptions"
-      />
-    </BCol>
-    <BCol
-      md="4"
-      cols="4"
-    >
-      <label>Ano final</label>
-      <BFormSelect
-        v-model="selectedMaxYear"
-        :options="yearSelectOptions"
+      <VueSlider
+        v-model="range"
+        min="2013"
+        max="2023"
+        marks
+        adsorb
       />
     </BCol>
     <BCol
       cols="4"
       md="2"
     >
-    <BButton
+      <BButton
         :loading="requestImageIsLoading || requestTableIsLoading"
         loading-text="Carregando..."
         :disabled="requestImageIsLoading || requestTableIsLoading"
