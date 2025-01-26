@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
     BCard: typeof import('bootstrap-vue-next/components/BCard')['BCard']
+    BCol: typeof import('bootstrap-vue-next/components/BContainer')['BCol']
     BContainer: typeof import('bootstrap-vue-next/components/BContainer')['BContainer']
     BFormSelect: typeof import('bootstrap-vue-next/components/BFormSelect')['BFormSelect']
     BRow: typeof import('bootstrap-vue-next/components/BContainer')['BRow']
@@ -19,6 +20,10 @@ declare module 'vue' {
     NavbarComponent: typeof import('./src/components/NavbarComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Tab1: typeof import('./src/components/tabs/Tab1.vue')['default']
+    Tab1Component: typeof import('./src/components/tabs/Tab1Component.vue')['default']
+    Tab2Component: typeof import('./src/components/tabs/Tab2Component.vue')['default']
+    Tab3Component: typeof import('./src/components/tabs/Tab3Component.vue')['default']
   }
   export interface ComponentCustomProperties {
     vBTooltip: typeof import('bootstrap-vue-next/directives/BTooltip')['vBTooltip']
