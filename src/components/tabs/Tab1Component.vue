@@ -3,6 +3,9 @@ import { _arrayBufferToBase64 } from '@/utils/image';
 import axios from 'axios';
 import { onMounted, ref } from 'vue';
 
+import { API_URL } from '@/environment'
+import type { ITabelasResult, TVisualization } from '@/types';
+
 const yearSelectOptions = [
   { value: null, text: 'Selecione uma opção' },
   { value: 'Todos as turmas', text: 'Todas as turmas' },
@@ -19,35 +22,22 @@ const yearSelectOptions = [
   { value: '2023', text: '2023' },
 ];
 
-interface IAnaliseTurmaItem {
-  Quantidade: number;
-  Status: string;
-}
-
-interface IConsolidade {
-  'Código': string;
-  'Gargalo': number;
-  'Nome': string;
-  'Supressões': number;
-  'Taxa de Aprovação (%)': number;
-  'Trancamentos': number;
-}
-
-interface ITabelasResult {
-  analise_turma: IAnaliseTurmaItem[],
-  df_consolidado: IConsolidade[],
-}
+const requestImageIsLoading = ref(false)
+const requestTableIsLoading = ref(false)
 
 const selectedYear = ref('Todos as turmas')
-const requestIsLoading = ref(false)
-const visualizationType = ref('taxa_aprovacao')
-const imageResponse = ref<string | null>(null)
-  const tabelasResult = ref<ITabelasResult | null>(null);
+const visualizationType = ref<TVisualization>('taxa_aprovacao')
 
-const onGenerateImageClick = () => {
+const imageResponse = ref<string | null>(null)
+const tabelasResult = ref<ITabelasResult | null>(null);
+
+
+const onRequestImage = () => {
   if (selectedYear.value) {
-    requestIsLoading.value = true;
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/image', {
+    requestImageIsLoading.value = true;
+    imageResponse.value = null;
+
+    axios.get(`${API_URL}/v2/visualizacao/image`, {
       params: {
         selecao: selectedYear.value,
         type: visualizationType.value,
@@ -55,15 +45,22 @@ const onGenerateImageClick = () => {
       responseType: 'arraybuffer'
     })
       .then(response => {
-        requestIsLoading.value = false;
+        requestImageIsLoading.value = false;
         imageResponse.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
-        requestIsLoading.value = false;
+        requestImageIsLoading.value = false;
         console.error('[REQUEST ERROR]', error)
       })
+  }
+}
 
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/tabelas', {
+const onRequestTableData = () => {
+  if (selectedYear.value) {
+    requestTableIsLoading.value = true;
+    tabelasResult.value = null;
+
+    axios.get(`${API_URL}/v2/visualizacao/tabelas`, {
       params: {
         selecao: selectedYear.value,
       },
@@ -71,15 +68,27 @@ const onGenerateImageClick = () => {
       .then(response => response.data)
       .then(response => {
         tabelasResult.value = response;
+        requestTableIsLoading.value = false;
       })
       .catch(error => {
-        console.error('[REQUEST ERROR]', error)
+        console.error('[REQUEST ERROR]', error);
+        requestTableIsLoading.value = false;
       })
   }
 }
 
+const requestAllData = () => {
+  onRequestImage();
+  onRequestTableData();
+}
+
+const onChangeVisualizationType = (value: TVisualization) => {
+  visualizationType.value = value;
+  onRequestImage();
+}
+
 onMounted(() => {
-  onGenerateImageClick()
+  requestAllData();
 })
 </script>
 <template>
@@ -109,11 +118,11 @@ onMounted(() => {
       cols="4"
     >
       <BButton
-        :loading="requestIsLoading"
+        :loading="requestImageIsLoading || requestTableIsLoading"
         loading-text="Carregando..."
-        :disabled="requestIsLoading"
+        :disabled="requestImageIsLoading || requestTableIsLoading"
         variant="primary"
-        @click="onGenerateImageClick"
+        @click="requestAllData"
       >Aplicar filtro</BButton>
     </BCol>
   </BRow>
@@ -129,41 +138,45 @@ onMounted(() => {
       >
         <label class="mb-2">Selecione um tipo de visualização: </label>
         <div class="button-group">
-          <BButton
-            class="custom-button left-rounded"
-            :class="{ 'selected': visualizationType === 'taxa_aprovacao' }"
-            v-b-tooltip.hover="'Mostra a taxa de aprovação dos alunos na 1ª tentativa de cada disciplina'"
-            @click="visualizationType = 'taxa_aprovacao'"
-          >
-            Taxa de Aprovação 1ª tentativa
-          </BButton>
+          <BButtonGroup>
+            <BButton
+              :variant="visualizationType === 'taxa_aprovacao' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('taxa_aprovacao')"
+            >
+              <span v-b-tooltip.hover="'Mostra a taxa de aprovação dos alunos na 1ª tentativa de cada disciplina'">
+                Taxa de Aprovação 1ª tentativa
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button"
-            :class="{ 'selected': visualizationType === 'gargalo' }"
-            v-b-tooltip.hover="'Exibe as disciplinas classificadas como gargalos, definidas como aquelas em que o aluno nunca conseguiu aprovação.'"
-            @click="visualizationType = 'gargalo'"
-          >
-            Gargalos
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'gargalo' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('gargalo')"
+            >
+              <span
+                v-b-tooltip.hover="'Exibe as disciplinas classificadas como gargalos, definidas como aquelas em que o aluno nunca conseguiu aprovação.'"
+              >
+                Gargalos
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button"
-            :class="{ 'selected': visualizationType === 'supressao' }"
-            v-b-tooltip.hover="'Mostra as disciplinas que os alunos suprimiram  '"
-            @click="visualizationType = 'supressao'"
-          >
-            Supressão
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'supressao' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('supressao')"
+            >
+              <span v-b-tooltip.hover="'Mostra as disciplinas que os alunos suprimiram'">
+                Supressão
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button right-rounded"
-            :class="{ 'selected': visualizationType === 'trancamento' }"
-            v-b-tooltip.hover="'Mostra as disciplinas que os alunos trancaram'"
-            @click="visualizationType = 'trancamento'"
-          >
-            Trancamento
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'trancamento' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('trancamento')"
+            >
+              <span v-b-tooltip.hover="'Mostra as disciplinas que os alunos trancaram'">
+                Trancamento
+              </span>
+            </BButton>
+          </BButtonGroup>
         </div>
 
         <hr>
@@ -174,6 +187,12 @@ onMounted(() => {
             class="w-100"
           />
         </template>
+        <div
+          class="text-center"
+          v-if="requestImageIsLoading"
+        >
+          <BSpinner label="Spinning" />
+        </div>
       </div>
     </BCol>
     <BCol md="6">
@@ -212,6 +231,12 @@ onMounted(() => {
         </div>
 
       </template>
+      <div
+        class="text-center"
+        v-if="requestTableIsLoading"
+      >
+        <BSpinner label="Spinning" />
+      </div>
     </BCol>
   </BRow>
 </template>

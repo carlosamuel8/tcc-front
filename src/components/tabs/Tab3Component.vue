@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
 
 import { _arrayBufferToBase64 } from '@/utils/image';
 
+import { API_URL } from '@/environment'
+
 const selectedYear = ref('Todos as turmas')
-const requestIsLoading = ref(false)
+
+const requestPetrinetIsLoading = ref(false)
+const requestFluxogramaIsLoading = ref(false)
 
 const yearSelectOptions = [
   { value: null, text: 'Selecione uma opção' },
@@ -28,10 +32,12 @@ const selectedMaxYear = ref(2023);
 const imageResponseTab3 = ref<string | null>(null)
 const imageResponseTab4 = ref<string | null>(null)
 
-const onGenerateImageTab3Click = () => {
+const onGenerateImagesClick = () => {
   if (selectedYear.value) {
-    requestIsLoading.value = true;
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/petrinet', {
+    requestPetrinetIsLoading.value = true;
+    requestFluxogramaIsLoading.value = true;
+
+    axios.get(`${API_URL}/v2/visualizacao/petrinet`, {
       params: {
         selecao: selectedMinYear.value,
         selecao2: selectedMaxYear.value,
@@ -39,14 +45,15 @@ const onGenerateImageTab3Click = () => {
       responseType: 'arraybuffer'
     })
       .then(response => {
-        requestIsLoading.value = false;
+        requestPetrinetIsLoading.value = false;
         imageResponseTab3.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
-        requestIsLoading.value = false;
+        requestPetrinetIsLoading.value = false;
         console.error('[REQUEST ERROR]', error)
       })
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/fluxograma', {
+
+    axios.get(`${API_URL}/v2/visualizacao/fluxograma`, {
       params: {
         selecao: selectedMinYear.value,
         selecao2: selectedMaxYear.value,
@@ -54,15 +61,19 @@ const onGenerateImageTab3Click = () => {
       responseType: 'arraybuffer'
     })
       .then(response => {
-        requestIsLoading.value = false;
+        requestFluxogramaIsLoading.value = false;
         imageResponseTab4.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
-        requestIsLoading.value = false;
+        requestFluxogramaIsLoading.value = false;
         console.error('[REQUEST ERROR]', error)
       })
   }
 }
+
+onMounted(() => {
+  onGenerateImagesClick();
+});
 
 </script>
 <template>
@@ -103,11 +114,11 @@ const onGenerateImageTab3Click = () => {
       cols="4"
     >
       <BButton
-        :loading="requestIsLoading"
+        :loading="requestFluxogramaIsLoading || requestPetrinetIsLoading"
         loading-text="Carregando..."
-        :disabled="requestIsLoading"
+        :disabled="requestFluxogramaIsLoading || requestPetrinetIsLoading"
         variant="primary"
-        @click="onGenerateImageTab3Click"
+        @click="onGenerateImagesClick"
       >Executar Replay</BButton>
     </BCol>
   </BRow>
@@ -123,6 +134,12 @@ const onGenerateImageTab3Click = () => {
           style="border: 2px solid #d3d3d3; border-radius: 5px;"
         />
       </template>
+      <div
+        class="text-center"
+        v-if="requestPetrinetIsLoading"
+      >
+        <BSpinner label="Spinning" />
+      </div>
     </BCol>
 
     <BCol md="6">
@@ -134,6 +151,12 @@ const onGenerateImageTab3Click = () => {
           style="border: 2px solid #d3d3d3; border-radius: 5px;"
         />
       </template>
+      <div
+        class="text-center"
+        v-if="requestFluxogramaIsLoading"
+      >
+        <BSpinner label="Spinning" />
+      </div>
     </BCol>
   </BRow>
 </template>

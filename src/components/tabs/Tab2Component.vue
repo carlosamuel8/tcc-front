@@ -1,27 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
 
 import { _arrayBufferToBase64 } from '@/utils/image';
 
-interface IAnaliseTurmaItem {
-  Quantidade: number;
-  Status: string;
-}
-
-interface IConsolidade {
-  'Código': string;
-  'Gargalo': number;
-  'Nome': string;
-  'Supressões': number;
-  'Taxa de Aprovação (%)': number;
-  'Trancamentos': number;
-}
-
-interface ITabelasResult {
-  analise_turma: IAnaliseTurmaItem[],
-  df_consolidado: IConsolidade[],
-}
+import { API_URL } from '@/environment'
+import type { ITabelasResult, TVisualization } from '@/types';
 
 const yearSelectOptions = [
   { value: null, text: 'Selecione uma opção' },
@@ -38,51 +22,78 @@ const yearSelectOptions = [
   { value: '2023', text: '2023' },
 ];
 
-const selectedYear = ref('Todos as turmas')
-const requestIsLoading = ref(false)
-const visualizationTypeTab2 = ref('taxa_aprovacao')
+const requestImageIsLoading = ref(false)
+const requestTableIsLoading = ref(false)
 
 const selectedMinYear = ref(2013);
 const selectedMaxYear = ref(2023);
+const visualizationType = ref<TVisualization>('taxa_aprovacao')
 
-const imageResponseTab2 = ref<string | null>(null)
+const imageResponse = ref<string | null>(null)
+const tabelasResult = ref<ITabelasResult | null>(null);
 
-const tabelasResultTab2 = ref<ITabelasResult | null>(null);
 
-const onGenerateImageTab2Click = () => {
-  if (selectedYear.value) {
-    requestIsLoading.value = true;
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/image', {
+
+const onRequestImage = () => {
+  if (selectedMinYear.value && selectedMaxYear.value) {
+    requestImageIsLoading.value = true;
+    imageResponse.value = null;
+
+    axios.get(`${API_URL}/v2/visualizacao/image`, {
       params: {
         selecao: selectedMinYear.value,
         selecao2: selectedMaxYear.value,
-        type: visualizationTypeTab2.value,
+        type: visualizationType.value,
       },
       responseType: 'arraybuffer'
     })
       .then(response => {
-        requestIsLoading.value = false;
-        imageResponseTab2.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+        requestImageIsLoading.value = false;
+        imageResponse.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
       })
       .catch(error => {
-        requestIsLoading.value = false;
-        console.error('[REQUEST ERROR]', error)
-      })
-
-    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/tabelas', {
-      params: {
-        selecao: selectedYear.value,
-      },
-    })
-      .then(response => response.data)
-      .then(response => {
-        tabelasResultTab2.value = response;
-      })
-      .catch(error => {
+        requestImageIsLoading.value = false;
         console.error('[REQUEST ERROR]', error)
       })
   }
 }
+
+const onRequestTableData = () => {
+  if (selectedMinYear.value && selectedMaxYear.value) {
+    requestTableIsLoading.value = true;
+    tabelasResult.value = null;
+
+    axios.get(`${API_URL}/v2/visualizacao/tabelas`, {
+      params: {
+        selecao: selectedMinYear.value,
+        selecao2: selectedMaxYear.value,
+      },
+    })
+      .then(response => response.data)
+      .then(response => {
+        tabelasResult.value = response;
+        requestTableIsLoading.value = false;
+      })
+      .catch(error => {
+        console.error('[REQUEST ERROR]', error);
+        requestTableIsLoading.value = false;
+      })
+  }
+}
+
+const requestAllData = () => {
+  onRequestImage();
+  onRequestTableData();
+}
+
+const onChangeVisualizationType = (value: TVisualization) => {
+  visualizationType.value = value;
+  onRequestImage();
+}
+
+onMounted(() => {
+  requestAllData();
+})
 
 </script>
 <template>
@@ -122,12 +133,12 @@ const onGenerateImageTab2Click = () => {
       cols="4"
       md="2"
     >
-      <BButton
-        :loading="requestIsLoading"
+    <BButton
+        :loading="requestImageIsLoading || requestTableIsLoading"
         loading-text="Carregando..."
-        :disabled="requestIsLoading"
+        :disabled="requestImageIsLoading || requestTableIsLoading"
         variant="primary"
-        @click="onGenerateImageTab2Click"
+        @click="requestAllData"
       >Aplicar filtro</BButton>
     </BCol>
   </BRow>
@@ -141,49 +152,59 @@ const onGenerateImageTab2Click = () => {
       >
         <label class="mb-2">Selecione um tipo de visualização: </label>
         <div class="button-group">
-          <BButton
-            class="custom-button left-rounded"
-            :class="{ 'selected': visualizationTypeTab2 === 'taxa_aprovacao' }"
-            v-b-tooltip.hover="'Mostra a taxa de aprovação geral dos alunos no período selecionado'"
-            @click="visualizationTypeTab2 = 'taxa_aprovacao'"
-          >
-            Taxa de Aprovação
-          </BButton>
+          <BButtonGroup>
+            <BButton
+              :variant="visualizationType === 'taxa_aprovacao' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('taxa_aprovacao')"
+            >
+              <span v-b-tooltip.hover="'Mostra a taxa de aprovação dos alunos na 1ª tentativa de cada disciplina'">
+                Taxa de Aprovação 1ª tentativa
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button"
-            :class="{ 'selected': visualizationTypeTab2 === 'gargalo' }"
-            v-b-tooltip.hover="'Exibe as disciplinas classificadas como gargalos, definidas como aquelas em que o aluno nunca conseguiu aprovação no período selecionado'"
-            @click="visualizationTypeTab2 = 'gargalo'"
-          >
-            Gargalos
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'gargalo' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('gargalo')"
+            >
+              <span
+                v-b-tooltip.hover="'Exibe as disciplinas classificadas como gargalos, definidas como aquelas em que o aluno nunca conseguiu aprovação.'"
+              >
+                Gargalos
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button"
-            :class="{ 'selected': visualizationTypeTab2 === 'supressao' }"
-            v-b-tooltip.hover="'Mostra as disciplinas que os alunos suprimiram no período selecionado  '"
-            @click="visualizationTypeTab2 = 'supressao'"
-          >
-            Supressão
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'supressao' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('supressao')"
+            >
+              <span v-b-tooltip.hover="'Mostra as disciplinas que os alunos suprimiram'">
+                Supressão
+              </span>
+            </BButton>
 
-          <BButton
-            class="custom-button right-rounded"
-            :class="{ 'selected': visualizationTypeTab2 === 'trancamento' }"
-            v-b-tooltip.hover="'Mostra as disciplinas que os alunos trancaram no período selecionado'"
-            @click="visualizationTypeTab2 = 'trancamento'"
-          >
-            Trancamento
-          </BButton>
+            <BButton
+              :variant="visualizationType === 'trancamento' ? 'primary' : 'outline-primary'"
+              @click="onChangeVisualizationType('trancamento')"
+            >
+              <span v-b-tooltip.hover="'Mostra as disciplinas que os alunos trancaram'">
+                Trancamento
+              </span>
+            </BButton>
+          </BButtonGroup>
         </div>
         <hr>
-        <template v-if="imageResponseTab2">
+        <template v-if="imageResponse">
           <img
-            :src="imageResponseTab2"
+            :src="imageResponse"
             class="w-100"
           />
         </template>
+        <div
+          class="text-center"
+          v-if="requestImageIsLoading"
+        >
+          <BSpinner label="Spinning" />
+        </div>
       </div>
 
     </BCol>
@@ -191,14 +212,14 @@ const onGenerateImageTab2Click = () => {
     <BCol md="6">
 
       <h2 class="text-center mb-2">Informações gerais</h2>
-      <template v-if="tabelasResultTab2">
+      <template v-if="tabelasResult">
 
         <div style="max-height: 500px; overflow: auto;">
           <BTable
             striped
             bordered
             hover
-            :items="tabelasResultTab2.df_consolidado"
+            :items="tabelasResult.df_consolidado"
             :fields="[
               { key: 'Código', sortable: true },
               { key: 'Nome', sortable: true },
@@ -211,6 +232,12 @@ const onGenerateImageTab2Click = () => {
         </div>
 
       </template>
+      <div
+        class="text-center"
+        v-if="requestTableIsLoading"
+      >
+        <BSpinner label="Spinning" />
+      </div>
     </BCol>
   </BRow>
 </template>
