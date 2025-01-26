@@ -78,6 +78,7 @@ onMounted(() => {
     <BCol
       md="6"
       cols="12"
+      class="mb-5 mb-md-0"
     >
       <VueSlider
         v-model="range"
