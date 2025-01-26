@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import axios from 'axios';
-import VueSlider from 'vue-slider-component'
-import 'vue-slider-component/theme/default.css'
 
 import { _arrayBufferToBase64 } from '@/utils/image';
 
@@ -25,10 +23,27 @@ interface ITabelasResult {
   df_consolidado: IConsolidade[],
 }
 
+const yearSelectOptions = [
+  { value: null, text: 'Selecione uma opção' },
+  { value: '2013', text: '2013' },
+  { value: '2014', text: '2014' },
+  { value: '2015', text: '2015' },
+  { value: '2016', text: '2016' },
+  { value: '2017', text: '2017' },
+  { value: '2018', text: '2018' },
+  { value: '2019', text: '2019' },
+  { value: '2020', text: '2020' },
+  { value: '2021', text: '2021' },
+  { value: '2022', text: '2022' },
+  { value: '2023', text: '2023' },
+];
+
 const selectedYear = ref('Todos as turmas')
 const requestIsLoading = ref(false)
 const visualizationTypeTab2 = ref('taxa_aprovacao')
-const range = ref([2013, 2023])
+
+const selectedMinYear = ref(2013);
+const selectedMaxYear = ref(2023);
 
 const imageResponseTab2 = ref<string | null>(null)
 
@@ -39,8 +54,8 @@ const onGenerateImageTab2Click = () => {
     requestIsLoading.value = true;
     axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/image', {
       params: {
-        selecao: range.value[0],
-        selecao2: range.value[1],
+        selecao: selectedMinYear.value,
+        selecao2: selectedMaxYear.value,
         type: visualizationTypeTab2.value,
       },
       responseType: 'arraybuffer'
@@ -87,17 +102,25 @@ const onGenerateImageTab2Click = () => {
       md="4"
       cols="4"
     >
-      <VueSlider
-        :min="2013"
-        :max="2023"
-        :interval="1"
-        :marks="true"
-        v-model="range"
-      ></VueSlider>
+      <label>Ano inicial</label>
+      <BFormSelect
+        v-model="selectedMinYear"
+        :options="yearSelectOptions"
+      />
     </BCol>
     <BCol
-      md="2"
+      md="4"
       cols="4"
+    >
+      <label>Ano final</label>
+      <BFormSelect
+        v-model="selectedMaxYear"
+        :options="yearSelectOptions"
+      />
+    </BCol>
+    <BCol
+      cols="4"
+      md="2"
     >
       <BButton
         :loading="requestIsLoading"

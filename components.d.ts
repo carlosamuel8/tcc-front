@@ -20,7 +20,6 @@ declare module 'vue' {
     NavbarComponent: typeof import('./src/components/NavbarComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Tab1: typeof import('./src/components/tabs/Tab1.vue')['default']
     Tab1Component: typeof import('./src/components/tabs/Tab1Component.vue')['default']
     Tab2Component: typeof import('./src/components/tabs/Tab2Component.vue')['default']
     Tab3Component: typeof import('./src/components/tabs/Tab3Component.vue')['default']
