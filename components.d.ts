@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
+    BButtonGroup: typeof import('bootstrap-vue-next/components/BButton')['BButtonGroup']
     BCard: typeof import('bootstrap-vue-next/components/BCard')['BCard']
     BCardText: typeof import('bootstrap-vue-next/components/BCard')['BCardText']
     BCol: typeof import('bootstrap-vue-next/components/BContainer')['BCol']
@@ -17,6 +18,7 @@ declare module 'vue' {
     BFormRadio: typeof import('bootstrap-vue-next/components/BFormRadio')['BFormRadio']
     BFormRadioGroup: typeof import('bootstrap-vue-next/components/BFormRadio')['BFormRadioGroup']
     BFormSelect: typeof import('bootstrap-vue-next/components/BFormSelect')['BFormSelect']
+    BModal: typeof import('bootstrap-vue-next/components/BModal')['BModal']
     BNavbar: typeof import('bootstrap-vue-next/components/BNavbar')['BNavbar']
     BNavbarBrand: typeof import('bootstrap-vue-next/components/BNavbar')['BNavbarBrand']
     BNavbarNav: typeof import('bootstrap-vue-next/components/BNavbar')['BNavbarNav']
@@ -27,6 +29,7 @@ declare module 'vue' {
     BTab: typeof import('bootstrap-vue-next/components/BTabs')['BTab']
     BTable: typeof import('bootstrap-vue-next/components/BTable')['BTable']
     BTabs: typeof import('bootstrap-vue-next/components/BTabs')['BTabs']
+    BTooltip: typeof import('bootstrap-vue-next/components/BTooltip')['BTooltip']
     CustomMinMaxSlider: typeof import('./src/components/CustomMinMaxSlider.vue')['default']
     HeaderComponent: typeof import('./src/components/HeaderComponent.vue')['default']
     NavbarComponent: typeof import('./src/components/NavbarComponent.vue')['default']
@@ -35,5 +38,6 @@ declare module 'vue' {
   }
   export interface ComponentCustomProperties {
     vBColorMode: typeof import('bootstrap-vue-next/directives/BColorMode')['vBColorMode']
+    vBTooltip: typeof import('bootstrap-vue-next/directives/BTooltip')['vBTooltip']
   }
 }
