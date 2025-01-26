@@ -69,7 +69,7 @@ function _arrayBufferToBase64(buffer: ArrayBuffer) {
 const onGenerateImageClick = () => {
   if (selectedYear.value) {
     requestIsLoading.value = true;
-    axios.get('http://localhost:5000/v2/visualizacao/image', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/image', {
       params: {
         selecao: selectedYear.value,
         type: visualizationType.value,
@@ -85,7 +85,7 @@ const onGenerateImageClick = () => {
         console.error('[REQUEST ERROR]', error)
       })
 
-    axios.get('http://localhost:5000/v2/visualizacao/tabelas', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/tabelas', {
       params: {
         selecao: selectedYear.value,
       },
@@ -103,7 +103,7 @@ const onGenerateImageClick = () => {
 const onGenerateImageTab2Click = () => {
   if (selectedYear.value) {
     requestIsLoading.value = true;
-    axios.get('http://localhost:5000/v2/visualizacao/image', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/image', {
       params: {
         selecao: range.value[0],
         selecao2: range.value[1],
@@ -120,7 +120,7 @@ const onGenerateImageTab2Click = () => {
         console.error('[REQUEST ERROR]', error)
       })
 
-    axios.get('http://localhost:5000/v2/visualizacao/tabelas', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/tabelas', {
       params: {
         selecao: selectedYear.value,
       },
@@ -139,7 +139,7 @@ const onGenerateImageTab2Click = () => {
 const onGenerateImageTab3Click = () => {
   if (selectedYear.value) {
     requestIsLoading.value = true;
-    axios.get('http://localhost:5000/v2/visualizacao/petrinet', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/petrinet', {
       params: {
         selecao: range.value[0],
         selecao2: range.value[1],
@@ -154,7 +154,7 @@ const onGenerateImageTab3Click = () => {
         requestIsLoading.value = false;
         console.error('[REQUEST ERROR]', error)
       })
-    axios.get('http://localhost:5000/v2/visualizacao/fluxograma', {
+    axios.get('https://data-analyze-6154fde0abbf.herokuapp.com/v2/visualizacao/fluxograma', {
       params: {
         selecao: range.value[0],
         selecao2: range.value[1],
@@ -188,7 +188,7 @@ onMounted(() => {
             </BCol>
           </BRow>
             <BRow class="pt-3" align-h="center">
-              <BCol md="5" cols="8">                
+              <BCol md="5" cols="8">
                 <BFormSelect v-model="selectedYear" :options="yearSelectOptions" />
               </BCol>
               <BCol md="auto" cols="4">
@@ -354,7 +354,7 @@ onMounted(() => {
           <BRow class="pt-3">
             <BCol md="6">
               <h2 class="text-center">Visualizar Rede de Petri</h2>
-              
+
               <template v-if="imageResponseTab3">
                 <img :src="imageResponseTab3" class="w-100" style="border: 2px solid #d3d3d3; border-radius: 5px;" />
               </template>
