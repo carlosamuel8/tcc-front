@@ -10,12 +10,14 @@ import { BCol } from 'bootstrap-vue-next';
 const requestPetrinetIsLoading = ref(false);
 const requestFluxogramaIsLoading = ref(false);
 const requestBarrasIsLoading = ref(false);
+const requestPizzaIsLoading = ref(false);
 
 const range = ref([2013, 2023]);
 
 const imageResponsePetrinet = ref<string | null>(null);
 const imageResponseFluxograma = ref<string | null>(null);
 const imageResponseBarras = ref<string | null>(null);
+const imageResponsePizza = ref<string | null>(null);
 
 const selectedImage = ref('petrinet'); // Estado inicial
 
@@ -24,10 +26,12 @@ const onGenerateImagesClick = () => {
     requestPetrinetIsLoading.value = true;
     requestFluxogramaIsLoading.value = true;
     requestBarrasIsLoading.value = true;
+    requestPizzaIsLoading.value = true;
 
     imageResponsePetrinet.value = null;
     imageResponseFluxograma.value = null;
     imageResponseBarras.value = null;
+    imageResponsePizza.value = null;
 
     axios
       .get(`${API_URL}/v2/visualizacao/petrinet`, {
@@ -63,7 +67,7 @@ const onGenerateImagesClick = () => {
         console.error('[REQUEST ERROR]', error);
       });
 
-    axios 
+    axios
       .get(`${API_URL}/v2/visualizacao/barras`, {
         params: {
           selecao: range.value[0],
@@ -77,6 +81,23 @@ const onGenerateImagesClick = () => {
       })
       .catch((error) => {
         requestBarrasIsLoading.value = false;
+        console.error('[REQUEST ERROR]', error);
+      });
+
+    axios
+      .get(`${API_URL}/v2/visualizacao/pizza`, {
+        params: {
+          selecao: range.value[0],
+          selecao2: range.value[1],
+        },
+        responseType: 'arraybuffer',
+      })
+      .then((response) => {
+        requestPizzaIsLoading.value = false;
+        imageResponsePizza.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+      })
+      .catch((error) => {
+        requestPizzaIsLoading.value = false;
         console.error('[REQUEST ERROR]', error);
       });
   }
@@ -111,38 +132,42 @@ onMounted(() => {
 
   <BRow class="pt-3">
     <BCol md="7">
+      <BRow>
       <div class="text-center">
         <label class="mb-3 ">Selecione um tipo de visualização: </label>
-      <div class="button-group mb-3">
-        <BButtonGroup>
-          <BButton :variant="selectedImage === 'fluxograma' ? 'primary' : 'outline-primary'"
-            @click="selectedImage = 'fluxograma'">
-            <span v-b-tooltip.hover="'Exibe a visualização em fluxograma com um maopa de calor de acordo com a quantidade de tokens restantes em cada disciplina.'">
-              Fluxograma
-            </span>
-          </BButton>
+        <div class="button-group mb-2">
+          <BButtonGroup>
+            <BButton :variant="selectedImage === 'fluxograma' ? 'primary' : 'outline-primary'"
+              @click="selectedImage = 'fluxograma'">
+              <span
+                v-b-tooltip.hover="'Exibe a visualização em fluxograma com um maopa de calor de acordo com a quantidade de tokens restantes em cada disciplina.'">
+                Fluxograma
+              </span>
+            </BButton>
 
-          <BButton :variant="selectedImage === 'petrinet' ? 'primary' : 'outline-primary'"
-            @click="selectedImage = 'petrinet'">
-            <span
-              v-b-tooltip.hover="'Exibe a Rede de Petri com um mapa de calor de acordo com a quantidade de tokens restantes em cada place.'">
-              Rede de Petri
-            </span>
-          </BButton>
-        </BButtonGroup>
+            <BButton :variant="selectedImage === 'petrinet' ? 'primary' : 'outline-primary'"
+              @click="selectedImage = 'petrinet'">
+              <span
+                v-b-tooltip.hover="'Exibe a Rede de Petri com um mapa de calor de acordo com a quantidade de tokens restantes em cada place.'">
+                Rede de Petri
+              </span>
+            </BButton>
+          </BButtonGroup>
+        </div>
       </div>
-      </div>
-      
+      </BRow>
+
+
       <h2 class="text-center">
         {{ selectedImage === 'petrinet' ? 'Visualização em Rede de Petri' : 'Visualização em Fluxograma' }}
       </h2>
       <hr>
       <template v-if="selectedImage === 'petrinet' && imageResponsePetrinet">
-        <img :src="imageResponsePetrinet" class="w-100"  />
+        <img :src="imageResponsePetrinet" class="w-100" />
       </template>
       <!-- style="border: 2px solid #d3d3d3; border-radius: 5px;" -->
       <template v-if="selectedImage === 'fluxograma' && imageResponseFluxograma">
-        <img :src="imageResponseFluxograma" class="w-100"  />
+        <img :src="imageResponseFluxograma" class="w-100" />
       </template>
 
       <div class="text-center" v-if="requestPetrinetIsLoading || requestFluxogramaIsLoading">
@@ -150,14 +175,37 @@ onMounted(() => {
       </div>
     </BCol>
     <BCol md="5">
-      <h2 class="text-center">Visualização em Barras</h2>
-      <hr>
-      <template v-if="imageResponseBarras">
-        <img :src="imageResponseBarras" class="w-100" />
-      </template>
-      <div class="text-center" v-if="requestBarrasIsLoading">
-        <BSpinner label="Carregando Imagem..." />
-      </div>
+      <BRow>
+        <br>
+        <br>
+      </BRow>
+      <BRow>
+
+        <h2 class="text-center mb-3">Estatísticas do Replay: Comparativo entre Alunos Formados e Não Formados</h2>
+        <hr>
+        <template v-if="imageResponseBarras">
+          <img :src="imageResponseBarras" class="w-100" />
+        </template>
+        <div class="text-center" v-if="requestBarrasIsLoading">
+          <BSpinner label="Carregando Imagem..." />
+        </div>
+      </BRow>
+
+      <BRow>
+        <br>
+        <br>
+        <hr>
+        <h2 class="text-center mb-3">Distribuição Média de Tokens Remanescentes por Área de Conhecimento</h2>
+        <hr>
+        <template v-if="imageResponsePizza">
+          <img :src="imageResponsePizza" class="w-100" />
+        </template>
+        <div class="text-center" v-if="requestPizzaIsLoading">
+          <BSpinner label="Carregando Imagem..." />
+        </div>
+      </BRow>
+
+
     </BCol>
 
   </BRow>
