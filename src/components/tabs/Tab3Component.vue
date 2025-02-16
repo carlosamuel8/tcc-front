@@ -9,11 +9,13 @@ import { BCol } from 'bootstrap-vue-next';
 
 const requestPetrinetIsLoading = ref(false);
 const requestFluxogramaIsLoading = ref(false);
+const requestBarrasIsLoading = ref(false);
 
 const range = ref([2013, 2023]);
 
 const imageResponsePetrinet = ref<string | null>(null);
 const imageResponseFluxograma = ref<string | null>(null);
+const imageResponseBarras = ref<string | null>(null);
 
 const selectedImage = ref('petrinet'); // Estado inicial
 
@@ -21,9 +23,11 @@ const onGenerateImagesClick = () => {
   if (range.value) {
     requestPetrinetIsLoading.value = true;
     requestFluxogramaIsLoading.value = true;
+    requestBarrasIsLoading.value = true;
 
     imageResponsePetrinet.value = null;
     imageResponseFluxograma.value = null;
+    imageResponseBarras.value = null;
 
     axios
       .get(`${API_URL}/v2/visualizacao/petrinet`, {
@@ -56,6 +60,23 @@ const onGenerateImagesClick = () => {
       })
       .catch((error) => {
         requestFluxogramaIsLoading.value = false;
+        console.error('[REQUEST ERROR]', error);
+      });
+
+    axios 
+      .get(`${API_URL}/v2/visualizacao/barras`, {
+        params: {
+          selecao: range.value[0],
+          selecao2: range.value[1],
+        },
+        responseType: 'arraybuffer',
+      })
+      .then((response) => {
+        requestBarrasIsLoading.value = false;
+        imageResponseBarras.value = 'data:image/png;base64,' + _arrayBufferToBase64(response.data);
+      })
+      .catch((error) => {
+        requestBarrasIsLoading.value = false;
         console.error('[REQUEST ERROR]', error);
       });
   }
@@ -112,8 +133,6 @@ onMounted(() => {
       </div>
       </div>
       
-
-
       <h2 class="text-center">
         {{ selectedImage === 'petrinet' ? 'Visualização em Rede de Petri' : 'Visualização em Fluxograma' }}
       </h2>
@@ -131,7 +150,14 @@ onMounted(() => {
       </div>
     </BCol>
     <BCol md="5">
-      oioio
+      <h2 class="text-center">Visualização em Barras</h2>
+      <hr>
+      <template v-if="imageResponseBarras">
+        <img :src="imageResponseBarras" class="w-100" />
+      </template>
+      <div class="text-center" v-if="requestBarrasIsLoading">
+        <BSpinner label="Carregando Imagem..." />
+      </div>
     </BCol>
 
   </BRow>
