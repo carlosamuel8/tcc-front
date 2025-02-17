@@ -127,7 +127,7 @@ onMounted(() => {
               @click="onChangeVisualizationType('taxa_aprovacao')"
             >
               <span v-b-tooltip.hover="'Mostra a taxa de aprovação dos alunos na 1ª tentativa de cada disciplina'">
-                Taxa de Aprovação 1ª tentativa
+                Taxa de Aprovação
               </span>
             </BButton>
 
